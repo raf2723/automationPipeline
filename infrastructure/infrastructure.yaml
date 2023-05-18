@@ -26,10 +26,10 @@ Parameters:
     Description: Subnet1 having internet gateway access
     Type: String
     Default: ''  
-  SubnetId2:
-    Description: Subnet2 having internet gateway access
-    Type: String
-    Default: ''  
+  # SubnetId2:
+  #   Description: Subnet2 having internet gateway access
+  #   Type: String
+  #   Default: ''   
   EC2AMI:
     Description: AMI for EC2 instance to deploy
     Type: String
@@ -60,37 +60,37 @@ Resources:
   #       SubnetB: !GetAtt 'Network.Outputs.PrivateSubnetIdB'
   #       DBInstanceType: !Ref 'DBInstanceType'
   #       AlertTopic: !GetAtt 'SnsTopic.Outputs.Topic'
-  ALB:
-    Type: AWS::CloudFormation::Stack
-    Metadata:
-      cfn_nag:
-        rules_to_suppress:
-        - id: W3002
-          reason: "W3002: This code may only work with `package` cli command as the property"
-    Properties:
-      TemplateURL: alb/alb.yaml
-      Parameters:
-        ApplicationPort: '80'
-        HealthCheckPort: '80'
-        VPCId: !Ref 'VPCId'
-        TargetInstanceId1: !GetAtt 'EC2Instance1.Outputs.EC2Id'
-        TargetInstanceId2: !GetAtt 'EC2Instance2.Outputs.EC2Id'
-        SubnetId1: !Ref SubnetId1
-        SubnetId2: !Ref SubnetId2
-        AlbSecurityGroupId: !GetAtt 'ALBSecurityGroup.Outputs.SecurityGroupId'
+  # ALB:
+  #   Type: AWS::CloudFormation::Stack
+  #   Metadata:
+  #     cfn_nag:
+  #       rules_to_suppress:
+  #       - id: W3002
+  #         reason: "W3002: This code may only work with `package` cli command as the property"
+  #   Properties:
+  #     TemplateURL: alb/alb.yaml
+  #     Parameters:
+  #       ApplicationPort: '80'
+  #       HealthCheckPort: '80'
+  #       VPCId: !Ref 'VPCId'
+  #       TargetInstanceId1: !GetAtt 'EC2Instance1.Outputs.EC2Id'
+  #       TargetInstanceId2: !GetAtt 'EC2Instance2.Outputs.EC2Id'
+  #       SubnetId1: !Ref SubnetId1
+  #       SubnetId2: !Ref SubnetId2
+  #       AlbSecurityGroupId: !GetAtt 'ALBSecurityGroup.Outputs.SecurityGroupId'
 
-  ALBSecurityGroup:
-    Type: AWS::CloudFormation::Stack
-    Metadata:
-      cfn_nag:
-        rules_to_suppress:
-        - id: W3002
-          reason: "W3002: This code may only work with `package` cli command as the property"
-    Properties:
-      TemplateURL: alb/alb_secgrp.yaml
-      Parameters:
-        ServiceName: !Ref 'ServiceName'
-        VPCId: !Ref VPCId
+  # ALBSecurityGroup:
+  #   Type: AWS::CloudFormation::Stack
+  #   Metadata:
+  #     cfn_nag:
+  #       rules_to_suppress:
+  #       - id: W3002
+  #         reason: "W3002: This code may only work with `package` cli command as the property"
+  #   Properties:
+  #     TemplateURL: alb/alb_secgrp.yaml
+  #     Parameters:
+  #       ServiceName: !Ref 'ServiceName'
+  #       VPCId: !Ref VPCId
 
   EC2Instance1:
     Type: AWS::CloudFormation::Stack
@@ -109,23 +109,23 @@ Resources:
         EC2InstanceType: !Ref 'EC2InstanceType'
         EC2VolumeSize: !Ref 'EC2VolumeSize'
         ServerName: WebServer1
-        ALBSecurityGroup: !GetAtt ALBSecurityGroup.Outputs.SecurityGroupId
+        # ALBSecurityGroup: !GetAtt ALBSecurityGroup.Outputs.SecurityGroupId
 
-  EC2Instance2:
-    Type: AWS::CloudFormation::Stack
-    Metadata:
-      cfn_nag:
-        rules_to_suppress:
-        - id: W3002
-          reason: "W3002: This code may only work with `package` cli command as the property"    
-    Properties:
-      TemplateURL: ec2/ec2.yaml
-      Parameters:
-        VPCId: !Ref VPCId
-        EC2AMI: !Ref 'EC2AMI'
-        ServiceName: !Ref 'ServiceName'
-        SubnetId1: !Ref SubnetId2
-        EC2InstanceType: !Ref 'EC2InstanceType'
-        EC2VolumeSize: !Ref 'EC2VolumeSize'
-        ServerName: WebServer2
-        ALBSecurityGroup: !GetAtt ALBSecurityGroup.Outputs.SecurityGroupId
+  # EC2Instance2:
+  #   Type: AWS::CloudFormation::Stack
+  #   Metadata:
+  #     cfn_nag:
+  #       rules_to_suppress:
+  #       - id: W3002
+  #         reason: "W3002: This code may only work with `package` cli command as the property"    
+  #   Properties:
+  #     TemplateURL: ec2/ec2.yaml
+  #     Parameters:
+  #       VPCId: !Ref VPCId
+  #       EC2AMI: !Ref 'EC2AMI'
+  #       ServiceName: !Ref 'ServiceName'
+  #       SubnetId1: !Ref SubnetId2
+  #       EC2InstanceType: !Ref 'EC2InstanceType'
+  #       EC2VolumeSize: !Ref 'EC2VolumeSize'
+  #       ServerName: WebServer2
+  #       ALBSecurityGroup: !GetAtt ALBSecurityGroup.Outputs.SecurityGroupId

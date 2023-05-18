@@ -55,11 +55,11 @@ Resources:
         ToPort: 22
         IpProtocol: tcp
         CidrIp: 0.0.0.0/0
-      - Description: HTTP access
-        FromPort: 80
-        ToPort: 80
-        IpProtocol: tcp
-        SourceSecurityGroupId: !Ref ALBSecurityGroup
+      # - Description: HTTP access
+      #   FromPort: 80
+      #   ToPort: 80
+      #   IpProtocol: tcp
+      #   SourceSecurityGroupId: !Ref ALBSecurityGroup
     ####### Outbound connections are open.
       Tags:
       - Key: Name
