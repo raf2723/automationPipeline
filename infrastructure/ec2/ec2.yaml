@@ -23,9 +23,9 @@ Parameters:
   ServerName:
     Description: Server Name for Tagging
     Type: String
-  ALBSecurityGroup:
-    Description: Security Group Id for ALB
-    Type: String
+  # ALBSecurityGroup:
+  #   Description: Security Group Id for ALB
+  #   Type: String
 
 Resources:
 
