@@ -1,7 +1,7 @@
 {
     "Parameters": {
-        "ArtifactBucketArn": "*",
-        "ArtifactKey": "*",
+        "ArtifactBucketArn": "arn:aws:s3:::artifact-bucket-cfn-automation",
+        "ArtifactKey": "arn:aws:kms:us-east-1:541599747148:key/9e9ce3f5-7d73-496f-a07e-1847739c1d81",
         "ServiceName": "testautomation",
         "CloudFormationDeploymentRoleName": "cfn-deploy-role"
     }
