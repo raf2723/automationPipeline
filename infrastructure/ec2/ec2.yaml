@@ -1,0 +1,160 @@
+AWSTemplateFormatVersion: 2010-09-09
+Description: Ec2 infrastructure setup
+
+Parameters:
+  VPCId:
+    Description: Id of the VPC
+    Type: String
+  ServiceName:
+    Description: The name of the application to roll out
+    Type: String
+  SubnetId1:
+    Type: String
+    Description: ID of the subnet to place the instance(s) in
+  EC2InstanceType:
+    Description: Instance Type size parameter
+    Type: String
+  EC2VolumeSize:
+    Description: Volume size of the EC2
+    Type: String
+  EC2AMI:
+    Description: AMI Id for EC2 instance to deploy
+    Type: AWS::EC2::Image::Id
+  ServerName:
+    Description: Server Name for Tagging
+    Type: String
+  ALBSecurityGroup:
+    Description: Security Group Id for ALB
+    Type: String
+
+Resources:
+
+################### Main Application Instance ###################
+  EC2SecurityGroup:
+    Type: AWS::EC2::SecurityGroup
+    Metadata:
+      cfn_nag:
+        rules_to_suppress:
+        - id: F1000
+          reason: Outbound traffic limitations will need to be added by the project
+            team. Whitelisted to have the template running
+        - id: W28
+          reason: Explicit name improved Usability and is therefore set by purpose.
+        - id: W9
+          reason: (W9) Security Groups found with ingress cidr that is not /32
+        - id: W2
+          reason: (W2) Security Groups found with cidr open to world on ingress.  This should never be true on instance.  Permissible on ELB
+    Properties:
+      GroupName: !Sub ${AWS::StackName}-${AWS::AccountId}-${AWS::Region}-securityGroup
+      GroupDescription: Default security group for ec2 instance
+      VpcId: !Ref VPCId
+      ####### Remove RDP access before Go-Live
+      SecurityGroupIngress:
+      - Description: RDP access
+        FromPort: 22
+        ToPort: 22
+        IpProtocol: tcp
+        CidrIp: 0.0.0.0/0
+      - Description: HTTP access
+        FromPort: 80
+        ToPort: 80
+        IpProtocol: tcp
+        SourceSecurityGroupId: !Ref ALBSecurityGroup
+    ####### Outbound connections are open.
+      Tags:
+      - Key: Name
+        Value: !Sub "${AWS::StackName}-${ServiceName}-ec2-sg"
+      - Key: !Ref ServiceName
+        Value: ec2
+
+  EC2Role:
+    Metadata:
+      cfn_nag:
+        rules_to_suppress:
+        - id: W11
+          reason: The * resource on pass role is allowed since naming pattern cannot
+            be determined at this stage.
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: 2012-10-17
+        Statement:
+        - Effect: Allow
+          Principal:
+            Service:
+            - ec2.amazonaws.com
+          Action:
+          - sts:AssumeRole
+      Path: /
+      Policies:
+      - PolicyName: TagRootVolumePolicy
+        PolicyDocument:
+          Version: 2012-10-17
+          Statement:
+          - Effect: Allow
+            Action: ec2:Describe*
+            Resource: '*'
+          - Effect: Allow
+            Action: ec2:CreateTags
+            Resource:
+            - !Sub 'arn:aws:ec2:${AWS::Region}:${AWS::AccountId}:volume/*'
+            - !Sub 'arn:aws:ec2:${AWS::Region}:${AWS::AccountId}:instance/*'
+      ManagedPolicyArns:
+      - arn:aws:iam::aws:policy/AmazonSSMManagedInstanceCore
+      - arn:aws:iam::aws:policy/service-role/AmazonEC2RoleforSSM
+      - arn:aws:iam::aws:policy/CloudWatchActionsEC2Access
+
+  EC2InstanceProfile:
+    Type: AWS::IAM::InstanceProfile
+    Properties:
+      InstanceProfileName: !Sub EC2InstanceProfile-${AWS::StackName}
+      Path: /
+      Roles:
+      - !Ref EC2Role
+
+  EC2Instance:
+    Type: AWS::EC2::Instance
+    Properties:
+      ImageId: !Ref EC2AMI
+      InstanceType: !Ref EC2InstanceType
+      BlockDeviceMappings:
+      - DeviceName: /dev/xvda
+        Ebs:
+          VolumeSize: !Ref EC2VolumeSize
+          VolumeType: gp3
+          Encrypted: true
+          DeleteOnTermination: true
+      IamInstanceProfile: !Ref EC2InstanceProfile
+      NetworkInterfaces:
+      - AssociatePublicIpAddress: false
+        DeviceIndex: '0'
+        SubnetId: !Ref SubnetId1
+        GroupSet:
+        - !GetAtt "EC2SecurityGroup.GroupId"
+      Tags:
+      - Key: Name
+        Value: !Ref ServerName
+      UserData:
+        Fn::Base64: |
+            #!/bin/bash
+            yum -y update
+            yum -y install nginx
+            systemctl start nginx
+
+
+Outputs:
+  EC2SecurityGroup:
+    Description: Security group for EC2 instance
+    Value: !GetAtt EC2SecurityGroup.GroupId
+    Export:
+      Name: !Sub "${AWS::StackName}-EC2SecurityGroup"
+
+  EC2Id:
+    Description: EC2 instance ID
+    Value: !Ref EC2Instance
+    Export:
+      Name: !Sub "${AWS::StackName}-EC2Id"
+
+  EC2Role:
+    Description: EC2 Role
+    Value: !Ref EC2Role

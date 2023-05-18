@@ -1,0 +1,39 @@
+
+AWSTemplateFormatVersion: 2010-09-09
+Description: Application Load Balancer log bucket
+
+Parameters: 
+  ServiceName:
+    Type: "String"
+  VPCId:
+    Type: "String"
+
+Resources:
+  AlbSecurityGroup:
+    Metadata:
+      cfn_nag:
+        rules_to_suppress:
+          - id: W40
+            reason: "This is not needed, it is already handled by network segmentation"
+          - id: W5
+            reason: "This is not needed, it is already handled by network segmentation"
+          - id: W9
+            reason: "This is the purpose"
+          - id: W2
+            reason: "This is the purpose"
+          - id: F1000
+            reason: "(F1000) Missing egress rule means all traffic is allowed outbound.  Make this explicit if it is desired configuration"
+    Type: "AWS::EC2::SecurityGroup"
+    Properties:
+      GroupDescription: !Sub "${ServiceName}-alb-sec-group"
+      VpcId: !Ref VPCId
+      SecurityGroupIngress:
+      - Description: "HTTP Ingress from public Internet for https forwarding"
+        FromPort: 80
+        ToPort: 80
+        IpProtocol: "tcp"
+        CidrIp: "0.0.0.0/0"
+
+Outputs:
+  SecurityGroupId:
+    Value: !GetAtt AlbSecurityGroup.GroupId

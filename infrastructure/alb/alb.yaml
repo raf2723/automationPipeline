@@ -1,0 +1,104 @@
+
+AWSTemplateFormatVersion: 2010-09-09
+Description: Application Load Balancer and related resources
+Parameters:
+  VPCId:
+    Type: String
+    Description: "ID of the VPC containing the service resources."
+  TargetInstanceId1:
+    Type: AWS::EC2::Instance::Id
+  TargetInstanceId2:
+    Type: AWS::EC2::Instance::Id    
+  SubnetId1:
+    Type: AWS::EC2::Subnet::Id
+  SubnetId2:
+    Type: AWS::EC2::Subnet::Id
+  AlbSecurityGroupId:
+    Type: String
+  ApplicationPort:
+    Description: Port of the webapplication running on the EC2
+    Type: String
+  HealthCheckPort:
+    Description: Port of the healthcheck service for ALB target
+    Type: String
+
+
+Resources:
+  # Load balancer resources
+  ApplicationLoadBalancer:
+    Type: "AWS::ElasticLoadBalancingV2::LoadBalancer"
+    Metadata:
+      cfn_nag:
+        rules_to_suppress:
+          - id: W52
+            reason: "(W52) Elastic Load Balancer V2 should have access logging enabled"    
+    Properties:
+      Scheme: "internet-facing"
+      SecurityGroups:
+        - !Ref AlbSecurityGroupId
+      Subnets:
+        - !Ref SubnetId1
+        - !Ref SubnetId2
+      Type: "application"
+
+  HttpListner:
+    Type: AWS::ElasticLoadBalancingV2::Listener
+    Metadata:
+      cfn_nag:
+        rules_to_suppress:
+          - id: W55
+            reason: "SSLPloicy not used"
+          - id: W56
+            reason: "(W56) Elastic Load Balancer V2 Listener Protocol should use HTTPS for ALBs"
+    Properties:
+      LoadBalancerArn: !Ref ApplicationLoadBalancer
+      Port: 80
+      Protocol: HTTP
+      DefaultActions:
+        - Type: forward
+          TargetGroupArn: !Ref ALBTargetGroup
+
+  HttpListnerRule:
+    Type: AWS::ElasticLoadBalancingV2::ListenerRule
+    Properties:
+      ListenerArn: !Ref HttpListner
+      Actions:
+        - Type: forward
+          ForwardConfig:
+            TargetGroups:
+              - TargetGroupArn: !Ref ALBTargetGroup
+      Priority: 1
+      Conditions:
+        - Field:  path-pattern
+          Values:
+            - /
+
+  ALBTargetGroup:
+    Type: AWS::ElasticLoadBalancingV2::TargetGroup
+    Properties:
+      HealthCheckEnabled: True
+      HealthCheckIntervalSeconds: 30
+      HealthCheckPath: "/" # Check according to your healthcheck path
+      HealthCheckPort: !Ref HealthCheckPort
+      HealthCheckProtocol: HTTP
+      HealthyThresholdCount: 3
+      Port: !Ref ApplicationPort
+      Protocol: HTTP
+      Targets:
+        - Id: !Ref TargetInstanceId1
+          Port: !Ref ApplicationPort
+        - Id: !Ref TargetInstanceId2
+          Port: !Ref ApplicationPort
+      TargetType: instance
+      UnhealthyThresholdCount: 3
+      VpcId: !Ref VPCId
+
+Outputs:
+  LoadBalancerArn:
+    Value: !Ref ApplicationLoadBalancer
+  LoadBalancerEndpoint:
+    Value: !GetAtt ApplicationLoadBalancer.DNSName
+  LoadBalancerHostedZoneId:
+    Value: !GetAtt ApplicationLoadBalancer.CanonicalHostedZoneID
+  ALBTargetGroup:
+    Value: !Ref ALBTargetGroup

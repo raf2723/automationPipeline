@@ -1,0 +1,8 @@
+{
+    "Parameters": {
+        "ArtifactBucketArn": "*",
+        "ArtifactKey": "*",
+        "ServiceName": "testautomation",
+        "CloudFormationDeploymentRoleName": "cfn-deploy-role"
+    }
+}

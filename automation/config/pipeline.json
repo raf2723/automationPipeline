@@ -1,0 +1,8 @@
+{
+    "Parameters": {
+        "Git2S3BucketName": "cfn-deploy-test2-git2s3",
+        "SourceObjectKey": "raf2723/automationPipeline/main/raf2723_automationPipeline.zip",
+        "ApplicationName": "testautomation",
+        "CloudFormationDeploymentRoleName": "cfn-deploy-role"
+    }
+}
